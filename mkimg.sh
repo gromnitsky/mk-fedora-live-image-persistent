@@ -8,8 +8,11 @@ p1_size_bytes=`stat -Lc %s "$p1"`
 p2=${2:?$usage}
 p2_size_bytes=`stat -Lc %s "$p2"`
 img=${3:?$usage}
+free_space=${FREE_SPACE:-2G}
 
-img_size=$(( p1_size_bytes + p2_size_bytes + 100*1024*1024))
+free_space=`echo "$free_space" | numfmt --from iec`
+
+img_size=$(( p1_size_bytes + p2_size_bytes + 1*1024*1024 + free_space))
 p1_size=$(( p1_size_bytes/512 )) # sectors
 p2_size=$(( p2_size_bytes/512 ))
 

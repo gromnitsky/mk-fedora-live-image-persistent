@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -e
+
+eh() { echo "mdlip error: $*" 1>&2; exit 1; }
+cc() { for c; do command -v "$c" > /dev/null || { eh "no $c"; }; done; }
+
+cc file sfdisk mkfs.ext4 mcopy numfmt
+[ $# = 3 ] || eh 'Usage: sudo mflip SIZE in.iso out.img'
+
+size=$1; in=$2; out=$3
+
+echo "$size" | grep -qxE '[0-9]+[MG]?' || eh "invalid SIZE"
+[ "`file -b --mime-type "$in"`" = application/x-iso9660-image ] || eh 'iso: bad'
+dd if="$in" bs=1 skip=32808 count=32 status=none | grep -qFw Fedora ||
+    eh "iso: unsupported type"
+
+tmp=`mktemp -d mflip.XXXXXX.tmp`
+mkdir "$tmp"/iso "$tmp"/ero
+
+clean() {
+    set +e
+    umount "$tmp"/ero
+    umount "$tmp"/iso
+    rm -rf "$tmp"
+}
+
+trap clean 0 1 2 15
+
+mount "$in" "$tmp/iso" -o ro
+mount "$tmp/iso"/LiveOS/squashfs.img "$tmp/ero"
+
+./mkbootfs.sh "$tmp/ero"/boot "$tmp"/1.img
+./mkrootfs.sh "$tmp/ero" "$tmp"/2.img
+FREE_SPACE=$size ./mkimg.sh "$tmp"/*.img "$out"
+
+[ "$SUDO_UID" ] && chown "$SUDO_UID:$SUDO_GID" "$out"
