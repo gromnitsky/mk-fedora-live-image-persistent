@@ -2,14 +2,15 @@
 
 set -e
 
-usage="sudo mkrootfs.sh container-dir out.img"
-os=${1:?$usage}
-img=${2:?$usage}
+usage="sudo mkrootfs.sh FREE_SPACE_SIZE container-dir out.img"
+free_space=${1:?$usage}
+free_space=`echo "$free_space" | numfmt --from iec`
+os=${2:?$usage}
+img=${3:?$usage}
 label=${ROOTFS_LABEL:-Fedora-Live}
 
 bytes=$(du -sb "$os" | cut -f1)
-# FIXME: add 20%
-size=$(( bytes * 120 / 100 ))
+size=$(( bytes * 120 / 100 + free_space))
 
 cp /dev/null "$img"
 truncate -s "$size" "$img"

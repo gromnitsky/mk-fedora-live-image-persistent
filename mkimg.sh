@@ -2,17 +2,14 @@
 
 set -e
 
-usage="Usage: mkimg.sh bootfs.img rootfs.img OUT.img"
+usage="Usage: [V=1] mkimg.sh bootfs.img rootfs.img OUT.img"
 p1=${1:?$usage}
 p1_size_bytes=`stat -Lc %s "$p1"`
 p2=${2:?$usage}
 p2_size_bytes=`stat -Lc %s "$p2"`
 img=${3:?$usage}
-free_space=${FREE_SPACE:-2G}
 
-free_space=`echo "$free_space" | numfmt --from iec`
-
-img_size=$(( p1_size_bytes + p2_size_bytes + 1*1024*1024 + free_space))
+img_size=$(( p1_size_bytes + p2_size_bytes + 2*1024*1024))
 p1_size=$(( p1_size_bytes/512 )) # sectors
 p2_size=$(( p2_size_bytes/512 ))
 
@@ -31,9 +28,10 @@ sector-size: 512
 EOF
 
 # STEP 2: copy bootfs to it
+status=progress; [ "$V" ] || status=none
 dd if="$p1" bs=4M seek=$(( (offset)*512 ))B \
-   of="$img" conv=notrunc,nocreat status=progress
+   of="$img" conv=notrunc,nocreat status=$status
 
 # STEP 3: copy rootfs to it
 dd if="$p2" bs=4M seek=$(( (offset+p1_size)*512 ))B \
-   of="$img" conv=notrunc,nocreat status=progress
+   of="$img" conv=notrunc,nocreat status=$status

@@ -6,7 +6,7 @@ eh() { echo "mdlip error: $*" 1>&2; exit 1; }
 cc() { for c; do command -v "$c" > /dev/null || { eh "no $c"; }; done; }
 
 cc file sfdisk mkfs.ext4 mcopy numfmt
-[ $# = 3 ] || eh 'Usage: sudo mflip FREE_SPACE_SIZE in.iso out.img'
+[ $# = 3 ] || eh 'Usage: sudo [V=1] mflip FREE_SPACE_SIZE in.iso out.img'
 
 free_space=$1; in=$2; out=$3
 
@@ -15,6 +15,7 @@ echo "$free_space" | grep -qxE '[0-9]+[MG]?' || eh "invalid FREE_SPACE_SIZE"
 dd if="$in" bs=1 skip=32808 count=32 status=none | grep -qFw Fedora ||
     eh "iso: unsupported type"
 
+ok=
 tmp=`mktemp -d mflip.XXXXXX.tmp`
 mkdir "$tmp"/iso "$tmp"/ero
 
@@ -23,17 +24,26 @@ clean() {
     umount "$tmp"/ero
     umount "$tmp"/iso
     rm -rf "$tmp"
+    [ "$ok" ] || rm -f "$out"
 }
 
 trap clean 0 1 2 15
 
+log() { [ -z "$V" ] || echo "$*" 1>&2; }
+export V
+
+log 1. Mounting loop devices
 mount "$in" "$tmp/iso" -o ro
 mount "$tmp/iso"/LiveOS/squashfs.img "$tmp/ero"
 
 __dirname=$(dirname "$(readlink -f "$0")")
 
+log 2. Bootfs
 "$__dirname"/mkbootfs.sh "$tmp/ero"/boot "$tmp"/1.img
-"$__dirname"/mkrootfs.sh "$tmp/ero" "$tmp"/2.img
-FREE_SPACE=$free_space "$__dirname"/mkimg.sh "$tmp"/*.img "$out"
+log 3. Rootfs
+"$__dirname"/mkrootfs.sh "$free_space" "$tmp/ero" "$tmp"/2.img
+log 4. Final image
+"$__dirname"/mkimg.sh "$tmp"/*.img "$out"
 
+ok=1
 [ "$SUDO_UID" ] && chown "$SUDO_UID:$SUDO_GID" "$out"
