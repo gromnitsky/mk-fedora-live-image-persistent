@@ -5,7 +5,7 @@ set -e
 eh() { echo "mflip error: $*" 1>&2; exit 1; }
 cc() { for c; do command -v "$c" > /dev/null || { eh "no $c"; }; done; }
 
-cc file sfdisk mkfs.ext4 mount.erofs mcopy
+cc file sfdisk mkfs.ext4 mount.erofs mcopy grub2-mkimage
 numfmt=`command -v gnumfmt numfmt` || eh "no numfmt"
 [ $# = 3 ] || eh 'Usage: sudo [V=1] mflip FREE_SPACE_SIZE in.iso OUT.img'
 
