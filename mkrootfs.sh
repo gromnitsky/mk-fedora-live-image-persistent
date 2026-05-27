@@ -3,8 +3,10 @@
 set -e
 
 usage="sudo mkrootfs.sh FREE_SPACE_SIZE container-dir out.img"
+numfmt=`command -v gnumfmt numfmt` || { echo no numfmt 1>&2; exit 1; }
+
 free_space=${1:?$usage}
-free_space=`echo "$free_space" | numfmt --from iec`
+free_space=`echo "$free_space" | $numfmt --from iec`
 os=${2:?$usage}
 img=${3:?$usage}
 label=${ROOTFS_LABEL:-Fedora-Live}

@@ -5,12 +5,13 @@ set -e
 eh() { echo "mflip error: $*" 1>&2; exit 1; }
 cc() { for c; do command -v "$c" > /dev/null || { eh "no $c"; }; done; }
 
-cc file sfdisk mkfs.ext4 mcopy numfmt
+cc file sfdisk mkfs.ext4 mount.erofs mcopy
+numfmt=`command -v gnumfmt numfmt` || eh "no numfmt"
 [ $# = 3 ] || eh 'Usage: sudo [V=1] mflip FREE_SPACE_SIZE in.iso OUT.img'
 
 free_space=$1; in=$2; out=$3
 
-echo "$free_space" | numfmt --from iec > /dev/null
+echo "$free_space" | $numfmt --from iec > /dev/null
 [ "`file -b --mime-type "$in"`" = application/x-iso9660-image ] || eh 'iso: bad'
 dd if="$in" bs=1 skip=32808 count=32 status=none | grep -qFw Fedora ||
     eh "iso: unsupported type"
