@@ -14,7 +14,8 @@ mkdir -p "$boot/EFI/BOOT"
 grub2-mkimage -O x86_64-efi -o "$boot/EFI/BOOT/BOOTX64.EFI" -p /EFI/BOOT \
               part_gpt fat linux normal configfile search echo
 
-cp -r EFI "$boot"/
+__dirname=$(dirname "$(readlink -f "$0")")
+cp -r "$__dirname"/EFI "$boot"/
 
 for i in vmlinuz initramfs; do
     find "$kernel_dir" -name "$i"\* | grep -v rescue | head -1 |
